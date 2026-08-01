@@ -7,12 +7,21 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-3 sm:p-4">
+<body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-3 sm:p-4 relative">
 
   <!-- 🔗 ใส่ URL จาก Google Apps Script Web App ตรงนี้ -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZnsTCBtNCW5xumpBs4sa3mPKkJBYKcdCB51-Wi9P5fOJKUUrUa0Hii_nSrrC2e9dANA/exec";
   </script>
+
+  <!-- 🚀 POPUP MODAL แจ้งเตือนผลลัพธ์ (1 วินาทีแล้วหายไป) -->
+  <div id="popupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
+    <div id="popupContent" class="bg-slate-800 border border-slate-700 rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center transform scale-95 transition-transform duration-300">
+      <div id="popupIcon" class="text-4xl mb-3">🔔</div>
+      <h3 id="popupTitle" class="text-lg font-extrabold text-white mb-1">แจ้งเตือน</h3>
+      <p id="popupMessage" class="text-sm text-slate-300 font-medium">รายละเอียด...</p>
+    </div>
+  </div>
 
   <!-- VIEW 1: หน้าล็อกอินสตาฟ -->
   <div id="staffLoginView" class="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700">
@@ -87,9 +96,6 @@
         </button>
       </form>
     </div>
-
-    <!-- กล่องแจ้งเตือนผลลัพธ์ -->
-    <div id="statusBox" class="hidden p-4 rounded-2xl text-center font-bold text-sm transition-all"></div>
   </div>
 
   <script>
@@ -97,6 +103,7 @@
     let html5QrCode = null;
     let isProcessing = false;
     let audioCtx = null;
+    let popupTimer = null;
 
     window.onload = function() {
       const savedStaff = localStorage.getItem("currentStaff");
@@ -105,7 +112,6 @@
       }
     };
 
-    // เคลียร์กล้องอัตโนมัติเมื่อปิดหรือรีเฟรชหน้าเว็บ
     window.addEventListener('beforeunload', () => {
       if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().catch(() => {});
@@ -176,8 +182,6 @@
     }
 
     async function startCamera() {
-      const statusBox = document.getElementById("statusBox");
-
       try {
         if (!html5QrCode) {
           html5QrCode = new Html5Qrcode("reader");
@@ -194,11 +198,9 @@
           config,
           onScanSuccess
         );
-
-        statusBox.classList.add("hidden");
       } catch (err) {
         console.error("Camera Error:", err);
-        showStatus("❌ ไม่สามารถเปิดกล้องได้: กรุณาอนุญาตสิทธิ์การเข้าถึงกล้องในเบราว์เซอร์", "bg-red-500/20 text-red-300 border border-red-500/30");
+        showPopup("❌ เปิดกล้องไม่สำเร็จ", "กรุณาอนุญาตสิทธิ์กล้องในเบราว์เซอร์", "error");
       }
     }
 
@@ -210,11 +212,9 @@
           }
           await html5QrCode.clear();
         }
-      } catch (e) {
-        console.error("Clear error:", e);
-      }
+      } catch (e) {}
       html5QrCode = null;
-      showStatus("🔄 กำลังรีสตาร์ทกล้อง...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
+      showPopup("🔄 รีสตาร์ทกล้อง", "กำลังเปิดกล้องใหม่...", "info");
       setTimeout(startCamera, 500);
     }
 
@@ -227,7 +227,6 @@
       if (input.files && input.files[0]) {
         initAudio();
         const file = input.files[0];
-        showStatus("⏳ กำลังอ่านภาพ QR Code...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
 
         try {
           if (html5QrCode && html5QrCode.isScanning) {
@@ -242,7 +241,7 @@
           setTimeout(startCamera, 1000);
 
         } catch (err) {
-          showStatus("❌ ไม่พบ QR Code ในภาพ ลองถ่ายใหม่อีกครั้งครับ", "bg-red-500/20 text-red-300 border border-red-500/30");
+          showPopup("❌ ไม่พบ QR Code", "ลองถ่ายภาพใหม่อีกครั้งครับ", "error");
           input.value = "";
           setTimeout(startCamera, 1000);
         }
@@ -274,13 +273,13 @@
       }
     
       if (scannedBoothId !== currentStaff.boothId) {
-        showStatus(`❌ ผิดบูธ! QR นี้เป็นของ ${scannedBoothId} (คุณอยู่บูธ ${currentStaff.boothId})`, "bg-red-500/20 text-red-300 border border-red-500/30");
+        showPopup("❌ ผิดบูธ!", `QR นี้เป็นของ ${scannedBoothId} (คุณอยู่บูธ ${currentStaff.boothId})`, "error");
         playAudio(false);
         return;
       }
     
       isProcessing = true;
-      showStatus("⏳ กำลังบันทึกแสตมป์...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
+      showPopup("⏳ กำลังบันทึก...", "กำลังส่งข้อมูลไปที่เซิร์ฟเวอร์", "info");
     
       try {
         const res = await callApi({ 
@@ -290,30 +289,55 @@
         });
     
         if (res.success) {
-          showStatus(`✅ ${res.message}`, "bg-green-500/20 text-green-300 border border-green-500/30");
+          showPopup("✅ ประทับตราสำเร็จ", res.message, "success");
           playAudio(true);
         } else if (res.isDuplicate) {
-          showStatus(`⚠️ ${res.message}`, "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30");
+          showPopup("⚠️ แจ้งเตือน", res.message, "warning");
           playAudio(false);
         } else {
-          showStatus(`❌ ${res.message}`, "bg-red-500/20 text-red-300 border border-red-500/30");
+          showPopup("❌ ผิดพลาด", res.message, "error");
           playAudio(false);
         }
       } catch (err) {
-        showStatus("❌ บันทึกล้มเหลว ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "bg-red-500/20 text-red-300 border border-red-500/30");
+        showPopup("❌ เชื่อมต่อล้มเหลว", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
         playAudio(false);
       }
     
       setTimeout(() => {
         isProcessing = false;
-      }, 2500);
+      }, 1500);
     }
 
-    function showStatus(msg, classes) {
-      const box = document.getElementById("statusBox");
-      box.className = `p-4 rounded-2xl text-center font-bold text-sm transition-all ${classes}`;
-      box.innerText = msg;
-      box.classList.remove("hidden");
+    // ฟังก์ชันจัดการแสดง Popup Modal แบบ 1 วินาทีหาย
+    function showPopup(title, message, type) {
+      const modal = document.getElementById("popupModal");
+      const content = document.getElementById("popupContent");
+      const titleEl = document.getElementById("popupTitle");
+      const msgEl = document.getElementById("popupMessage");
+      const iconEl = document.getElementById("popupIcon");
+
+      // กำหนดไอคอนตามประเภท
+      if (type === 'success') iconEl.innerText = "✅";
+      else if (type === 'error') iconEl.innerText = "❌";
+      else if (type === 'warning') iconEl.innerText = "⚠️";
+      else iconEl.innerText = "⏳";
+
+      titleEl.innerText = title;
+      msgEl.innerText = message;
+
+      if (popupTimer) clearTimeout(popupTimer);
+
+      // แสดง Popup
+      modal.classList.remove("opacity-0", "pointer-events-none");
+      content.classList.remove("scale-95");
+      content.classList.add("scale-100");
+
+      // ตั้งเวลาซ่อนอัตโนมัติ (1000 มิลลิวินาที = 1 วินาที)
+      popupTimer = setTimeout(() => {
+        modal.classList.add("opacity-0", "pointer-events-none");
+        content.classList.remove("scale-100");
+        content.classList.add("scale-95");
+      }, 1000);
     }
 
     function playAudio(isSuccess) {
