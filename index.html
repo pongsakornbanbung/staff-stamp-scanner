@@ -54,9 +54,14 @@
         <h2 id="boothTitleDisplay" class="font-bold text-base text-white mt-1">ชื่อบูธ...</h2>
         <p id="boothLocDisplay" class="text-xs text-slate-400"></p>
       </div>
-      <button onclick="staffLogout()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-xl transition">
-        ออก
-      </button>
+      <div class="flex gap-2">
+        <button onclick="restartCamera()" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-400 px-3 py-1.5 rounded-xl transition" title="รีเฟรชกล้อง">
+          🔄 กล้อง
+        </button>
+        <button onclick="staffLogout()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-xl transition">
+          ออก
+        </button>
+      </div>
     </div>
 
     <!-- ช่องสำหรับ Render แสดงกล้อง Live -->
@@ -100,6 +105,13 @@
       }
     };
 
+    // เคลียร์กล้องอัตโนมัติเมื่อปิดหรือรีเฟรชหน้าเว็บ
+    window.addEventListener('beforeunload', () => {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(() => {});
+      }
+    });
+
     function initAudio() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -109,7 +121,6 @@
       }
     }
 
-    // ฟังก์ชันส่ง API Request ไปยัง Google Apps Script
     async function callApi(payload) {
       const response = await fetch(GAS_API_URL, {
         method: "POST",
@@ -165,15 +176,19 @@
     }
 
     async function startCamera() {
-      if (html5QrCode && html5QrCode.isScanning) return;
-
       const statusBox = document.getElementById("statusBox");
 
       try {
-        html5QrCode = new Html5Qrcode("reader");
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode("reader");
+        }
+
+        if (html5QrCode.isScanning) {
+          return;
+        }
+
         const config = { fps: 15, qrbox: { width: 220, height: 220 } };
 
-        // บนโฮสต์นอก Chrome จะขอสิทธิ์กล้องได้อย่างถูกต้องทันที
         await html5QrCode.start(
           { facingMode: "environment" },
           config,
@@ -183,8 +198,24 @@
         statusBox.classList.add("hidden");
       } catch (err) {
         console.error("Camera Error:", err);
-        showStatus("❌ ไม่สามารถเปิดกล้องได้: กรุณาอนุญาตสิทธิ์การเข้าถึงกล้องในเบราว์เซอร์ Chrome", "bg-red-500/20 text-red-300 border border-red-500/30");
+        showStatus("❌ ไม่สามารถเปิดกล้องได้: กรุณาอนุญาตสิทธิ์การเข้าถึงกล้องในเบราว์เซอร์", "bg-red-500/20 text-red-300 border border-red-500/30");
       }
+    }
+
+    async function restartCamera() {
+      try {
+        if (html5QrCode) {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+          await html5QrCode.clear();
+        }
+      } catch (e) {
+        console.error("Clear error:", e);
+      }
+      html5QrCode = null;
+      showStatus("🔄 กำลังรีสตาร์ทกล้อง...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
+      setTimeout(startCamera, 500);
     }
 
     function onScanSuccess(decodedText) {
@@ -213,6 +244,7 @@
         } catch (err) {
           showStatus("❌ ไม่พบ QR Code ในภาพ ลองถ่ายใหม่อีกครั้งครับ", "bg-red-500/20 text-red-300 border border-red-500/30");
           input.value = "";
+          setTimeout(startCamera, 1000);
         }
       }
     }
@@ -230,8 +262,6 @@
     async function processStamp(payload) {
       if (isProcessing) return;
     
-      // 1. แกะข้อมูลจาก QR (รูปแบบ: STUxxxx|Bxx)
-      // รองรับกรณีพิมพ์รหัสเด็กตรงๆ แบบไม่มีขีดคั่นด้วย
       let studentId, scannedBoothId;
       
       if (payload.includes('|')) {
@@ -239,27 +269,24 @@
         studentId = parts[0].trim();
         scannedBoothId = parts[1].trim();
       } else {
-        // กรณีพิมพ์รหัสเดี่ยวๆ ให้ยึดบูธของเครื่องปัจจุบันเป็นหลัก
         studentId = payload.trim();
         scannedBoothId = currentStaff.boothId;
       }
     
-      // 2. เช็กความปลอดภัย: ถ้า QR ที่เอามาสแกน ไม่ตรงกับบูธของเครื่องนี้ -> ห้ามส่ง!
       if (scannedBoothId !== currentStaff.boothId) {
         showStatus(`❌ ผิดบูธ! QR นี้เป็นของ ${scannedBoothId} (คุณอยู่บูธ ${currentStaff.boothId})`, "bg-red-500/20 text-red-300 border border-red-500/30");
         playAudio(false);
-        return; // ตัดจบ ไม่ส่งข้อมูลไปบันทึก
+        return;
       }
     
       isProcessing = true;
       showStatus("⏳ กำลังบันทึกแสตมป์...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
     
       try {
-        // 3. ส่งข้อมูลไปที่ Backend (ใช้โครงสร้างสลับค่าตามที่ระบบเก่าผูกไว้)
         const res = await callApi({ 
           action: 'recordStamp', 
-          boothId: studentId,         // รหัสเด็ก
-          studentId: scannedBoothId   // รหัสบูธที่ถูกต้องจาก QR
+          boothId: studentId,         
+          studentId: scannedBoothId   
         });
     
         if (res.success) {
@@ -312,15 +339,15 @@
       }
     }
 
-    function staffLogout() {
+    async function staffLogout() {
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-          html5QrCode.clear();
-          resetToLogin();
-        }).catch(err => resetToLogin());
-      } else {
-        resetToLogin();
+        try {
+          await html5QrCode.stop();
+          await html5QrCode.clear();
+        } catch (err) {}
       }
+      html5QrCode = null;
+      resetToLogin();
     }
 
     function resetToLogin() {
