@@ -227,39 +227,60 @@
       }
     }
 
-async function processStamp(payload) {
-  if (isProcessing) return;
-  isProcessing = true;
-  showStatus("⏳ กำลังบันทึกแสตมป์...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
-
-  try {
-    // 🔀 สลับตรงนี้: เอาค่า payload (รหัสเด็ก) มาใส่ boothId และเอา boothId ไปใส่ studentId 
-    // เพื่อให้วิ่งไปชนกับ doPost เก่าที่สลับรับค่าอยู่
-    const res = await callApi({ 
-      action: 'recordStamp', 
-      boothId: payload,              // เอา รหัสเด็ก (payload) มาลงตรงนี้
-      studentId: currentStaff.boothId // เอา รหัสบูธ มาลงตรงนี้
-    });
-
-    if (res.success) {
-      showStatus(`✅ ${res.message}`, "bg-green-500/20 text-green-300 border border-green-500/30");
-      playAudio(true);
-    } else if (res.isDuplicate) {
-      showStatus(`⚠️ ${res.message}`, "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30");
-      playAudio(false);
-    } else {
-      showStatus(`❌ ${res.message}`, "bg-red-500/20 text-red-300 border border-red-500/30");
-      playAudio(false);
+    async function processStamp(payload) {
+      if (isProcessing) return;
+    
+      // 1. แกะข้อมูลจาก QR (รูปแบบ: STUxxxx|Bxx)
+      // รองรับกรณีพิมพ์รหัสเด็กตรงๆ แบบไม่มีขีดคั่นด้วย
+      let studentId, scannedBoothId;
+      
+      if (payload.includes('|')) {
+        const parts = payload.split('|');
+        studentId = parts[0].trim();
+        scannedBoothId = parts[1].trim();
+      } else {
+        // กรณีพิมพ์รหัสเดี่ยวๆ ให้ยึดบูธของเครื่องปัจจุบันเป็นหลัก
+        studentId = payload.trim();
+        scannedBoothId = currentStaff.boothId;
+      }
+    
+      // 2. เช็กความปลอดภัย: ถ้า QR ที่เอามาสแกน ไม่ตรงกับบูธของเครื่องนี้ -> ห้ามส่ง!
+      if (scannedBoothId !== currentStaff.boothId) {
+        showStatus(`❌ ผิดบูธ! QR นี้เป็นของ ${scannedBoothId} (คุณอยู่บูธ ${currentStaff.boothId})`, "bg-red-500/20 text-red-300 border border-red-500/30");
+        playAudio(false);
+        return; // ตัดจบ ไม่ส่งข้อมูลไปบันทึก
+      }
+    
+      isProcessing = true;
+      showStatus("⏳ กำลังบันทึกแสตมป์...", "bg-amber-500/20 text-amber-300 border border-amber-500/30");
+    
+      try {
+        // 3. ส่งข้อมูลไปที่ Backend (ใช้โครงสร้างสลับค่าตามที่ระบบเก่าผูกไว้)
+        const res = await callApi({ 
+          action: 'recordStamp', 
+          boothId: studentId,         // รหัสเด็ก
+          studentId: scannedBoothId   // รหัสบูธที่ถูกต้องจาก QR
+        });
+    
+        if (res.success) {
+          showStatus(`✅ ${res.message}`, "bg-green-500/20 text-green-300 border border-green-500/30");
+          playAudio(true);
+        } else if (res.isDuplicate) {
+          showStatus(`⚠️ ${res.message}`, "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30");
+          playAudio(false);
+        } else {
+          showStatus(`❌ ${res.message}`, "bg-red-500/20 text-red-300 border border-red-500/30");
+          playAudio(false);
+        }
+      } catch (err) {
+        showStatus("❌ บันทึกล้มเหลว ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "bg-red-500/20 text-red-300 border border-red-500/30");
+        playAudio(false);
+      }
+    
+      setTimeout(() => {
+        isProcessing = false;
+      }, 2500);
     }
-  } catch (err) {
-    showStatus("❌ บันทึกล้มเหลว ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "bg-red-500/20 text-red-300 border border-red-500/30");
-    playAudio(false);
-  }
-
-  setTimeout(() => {
-    isProcessing = false;
-  }, 2500);
-}
 
     function showStatus(msg, classes) {
       const box = document.getElementById("statusBox");
