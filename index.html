@@ -105,7 +105,6 @@
   </div>
 
   <script>
-    // ⚙️ ตั้งค่าการเชื่อมต่อ Supabase
     const SUPABASE_URL = 'https://vnecpsqyivkvlpgfitdq.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_7Ed2cU6jzNtBWSdpQoQv6w_uFX6ruaE';
     
@@ -122,7 +121,6 @@
       }
     };
 
-    // 🔐 ล็อกอินเช็คจากตาราง students
     async function handleStudentLogin(event) {
       event.preventDefault();
       const user = document.getElementById("stdUsername").value.trim();
@@ -150,7 +148,7 @@
           errDiv.classList.remove("hidden");
         } else {
           const studentInfo = {
-            studentId: data.student_id,
+            studentId: String(data.student_id), // บังคับแปลงเป็น String ป้องกัน Error 400
             name: data.name,
             school: data.school
           };
@@ -175,14 +173,12 @@
       refreshStamps();
     }
 
-    // ⚡ ดึงข้อมูลจากตาราง activities และ scan_logs (ใช้คอลัมน์ activity_id)
     async function refreshStamps() {
       if (!currentStudentData) return;
       
       document.getElementById("stampCount").innerText = "⏳";
 
       try {
-        // 1. ดึงข้อมูลบูธจากตาราง activities
         const { data: boothsData, error: boothsError } = await supabaseClient
           .from('activities')
           .select('*')
@@ -191,11 +187,10 @@
         if (boothsError) throw boothsError;
         allBooths = boothsData || [];
 
-        // 2. ดึงประวัติการสแกนจากตาราง scan_logs (จับคู่ตาม student_id และ activity_id)
         const { data: logsData, error: logsError } = await supabaseClient
           .from('scan_logs')
           .select('activity_id')
-          .eq('student_id', currentStudentData.studentId);
+          .eq('student_id', String(currentStudentData.studentId));
 
         if (logsError) throw logsError;
         
@@ -206,17 +201,16 @@
         renderStampGrid();
 
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching stamps:", err);
         document.getElementById("stampCount").innerText = "❌";
       }
     }
 
-    // 🎨 วาดวงกลมสะสมแสตมป์
     function renderStampGrid() {
       const grid = document.getElementById("stampGrid");
       grid.innerHTML = "";
 
-      allBooths.forEach((booth, index) => {
+      allBooths.forEach((booth) => {
         const isDone = myCompletedStamps.includes(booth.booth_id);
         const circleBtn = document.createElement("button");
         circleBtn.onclick = () => openModal(booth, isDone);
