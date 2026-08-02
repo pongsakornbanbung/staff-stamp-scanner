@@ -60,7 +60,7 @@
       </button>
     </div>
 
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 text-white mb-5 shadow-md flex justify-between items-center">
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 text-white mb-4 shadow-md flex justify-between items-center">
       <div>
         <p class="text-xs text-blue-100 font-medium">แสตมป์ที่สะสมได้</p>
         <p class="text-2xl font-black mt-0.5"><span id="stampCount">0</span> <span class="text-sm font-normal text-blue-200">/ <span id="totalBoothCount">20</span> บูธ</span></p>
@@ -72,7 +72,8 @@
 
     <p class="text-xs font-semibold text-slate-500 mb-3 text-center">แตะที่วงกลมบูธ เพื่อแสดง QR Code ให้สตาฟสแกน</p>
 
-    <div id="stampGrid" class="grid grid-cols-4 gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200/80 max-h-[350px] overflow-y-auto items-center">
+    <!-- ปรับแก้ตรงนี้: เอา max-h และ overflow ออก เพื่อให้แสดงครบทุกอันแบบไม่มี scrollbar ด้านข้าง -->
+    <div id="stampGrid" class="grid grid-cols-4 gap-2.5 p-3 bg-slate-50 rounded-2xl border border-slate-200/80 items-center">
     </div>
   </div>
 
@@ -152,7 +153,7 @@
         btn.disabled = false;
         btn.innerHTML = `<span>เข้าสู่ระบบ</span>`;
         errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล";
-        errDiv.classList.add("hidden");
+        errDiv.classList.remove("hidden");
       }
     }
 
@@ -211,14 +212,14 @@
         if (isDone) {
           circleBtn.className = "stamp-checked aspect-square rounded-full border-2 border-green-500 flex flex-col items-center justify-center p-1 shadow-sm transition transform active:scale-95";
           circleBtn.innerHTML = `
-            <span class="text-lg">✅</span>
+            <span class="text-base">✅</span>
             <span class="text-[9px] font-bold text-green-700 truncate w-full text-center">${booth.activity_id}</span>
           `;
         } else {
           circleBtn.className = "bg-white aspect-square rounded-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 flex flex-col items-center justify-center p-1 shadow-sm transition transform active:scale-95";
           circleBtn.innerHTML = `
-            <span class="text-[10px] font-bold text-slate-400">${booth.activity_id}</span>
-            <span class="text-[9px] font-semibold text-slate-600 truncate w-full text-center px-1">${booth.title}</span>
+            <span class="text-[9px] font-bold text-slate-400">${booth.activity_id}</span>
+            <span class="text-[8px] font-semibold text-slate-600 truncate w-full text-center px-0.5">${booth.title}</span>
           `;
         }
 
