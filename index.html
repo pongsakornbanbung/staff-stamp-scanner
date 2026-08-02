@@ -329,8 +329,10 @@
         btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> กำลังสร้างรูป...`;
 
         try {
-            // 1. โหลดฟอนต์ Prompt น้ำหนักปกติ (400) ล่วงหน้า
-            await document.fonts.load("400 40px 'Prompt'");
+            // 1. โหลดฟอนต์ Prompt เข้า Canvas โดยตรงผ่าน FontFace API (วิธีนี้ฟอนต์จะติดแน่นอน 100%)
+            const font = new FontFace('Prompt', 'https://fonts.gstatic.com/s/prompt/v10/-W_6XJnvPqF7i9J9WOgcjA.woff2', { weight: '400' });
+            await font.load();
+            document.fonts.add(font);
 
             // 2. โหลดรูปภาพต้นฉบับ
             const img = new Image();
@@ -350,17 +352,15 @@
 
             ctx.drawImage(img, 0, 0);
 
-            // 4. ตั้งค่าขนาดฟอนต์ (ปรับขนาดตามความสูงภาพ หรือกำหนดตัวเลขคงที่ตามต้องการ)
-            const fontSize = Math.round(canvas.height * 0.045); 
-
-            // เปลี่ยนจาก bold เป็น 400 เพื่อให้ความหนาบางลงสวยงาม
-            ctx.font = `400 ${fontSize}px 'Prompt', sans-serif`;
+            // 4. ตั้งค่าขนาดฟอนต์ 18px, น้ำหนัก 400 (ไม่หนา), ฟอนต์ Prompt
+            const fontSize = 18; 
+            ctx.font = `400 ${fontSize}px Prompt, sans-serif`;
             ctx.fillStyle = '#090082';
             ctx.textAlign = 'center';
 
             const xCenter = canvas.width / 2;
             
-            // 5. ล็อกตำแหน่ง Y ไว้ที่ 445 ตรงๆ ตามที่ต้องการ (ไม่ต้องคูณสัดส่วนเพิ่ม)
+            // 5. ล็อกตำแหน่ง Y ไว้ที่ 445 เป๊ะๆ ตามที่คุณต้องการ
             const yPos = 445; 
 
             ctx.fillText(studentName, xCenter, yPos);
