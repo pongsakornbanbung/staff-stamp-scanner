@@ -204,7 +204,9 @@
         
         myCompletedStamps = (logsData || []).map(log => log.activity_id);
         
-        document.getElementById("stampCount").innerText = myCompletedStamps.length;
+        const earnedCount = myCompletedStamps.length; // ✅ ประกาศตัวแปรนับจำนวนให้ถูกต้อง
+        
+        document.getElementById("stampCount").innerText = earnedCount;
         document.getElementById("totalBoothCount").innerText = allBooths.length;
         renderStampGrid();
 
