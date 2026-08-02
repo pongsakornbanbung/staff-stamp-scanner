@@ -339,7 +339,7 @@
 
             // 3. โหลดรูปภาพต้นฉบับ
             const img = new Image();
-            img.crossOrigin = "Anonymous";
+            img.crossOrigin = "Anonymous"; // สำคัญมาก สำหรับการโหลดรูปข้าม Domain จาก GitHub
             img.src = imageUrl;
             
             // รอโหลดรูปเสร็จ
@@ -357,15 +357,15 @@
             // 5. วาดรูป Template ลงบน Canvas
             ctx.drawImage(img, 0, 0);
 
-            // 6. ตั้งค่าสไตล์ข้อความ (ปรับความหนาเป็น 400 ให้บางลง, ขนาด 18px)
+            // 6. ตั้งค่าสไตล์ข้อความ (กำหนดขนาดฟอนต์ 18px ตามที่คุณต้องการ)
             const fontSize = 18; 
-            ctx.font = `400 ${fontSize}px Prompt, sans-serif`; 
+            ctx.font = `bold ${fontSize}px Prompt, sans-serif`;
             ctx.fillStyle = '#090082'; // สีน้ำเงินตามต้องการ
             ctx.textAlign = 'center';   // จัดกึ่งกลาง
 
-            // คำนวณตำแหน่งแกน X (กึ่งกลาง) และ Y ที่ 445 ตามต้องการ
+            // คำนวณตำแหน่งแกน X (กึ่งกลาง) และ Y ตามที่คุณระบุ
             const xCenter = canvas.width / 2;
-            const yPos = 445; 
+            const yPos = 445; // ตำแหน่ง Y ตามที่ต้องการ
 
             // 7. วาดข้อความชื่อนักเรียนลงบน Canvas
             ctx.fillText(studentName, xCenter, yPos);
