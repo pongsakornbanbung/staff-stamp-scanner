@@ -10,12 +10,17 @@
 </head>
 <body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-3 sm:p-4 relative">
 
-  <!-- 🚀 POPUP MODAL แจ้งเตือนผลลัพธ์ -->
-  <div id="popupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
-    <div id="popupContent" class="bg-slate-800 border border-slate-700 rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center transform scale-95 transition-transform duration-300">
-      <div id="popupIcon" class="text-4xl mb-3">🔔</div>
-      <h3 id="popupTitle" class="text-lg font-extrabold text-white mb-1">แจ้งเตือน</h3>
-      <p id="popupMessage" class="text-sm text-slate-300 font-medium">รายละเอียด...</p>
+  <!-- 🚀 POPUP MODAL แบบมีปุ่มกดเพื่อสแกนต่อ -->
+  <div id="popupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 p-4">
+    <div id="popupContent" class="bg-slate-800 border border-slate-700 rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center transform scale-95 transition-transform duration-200">
+      <div id="popupIcon" class="text-5xl mb-3">🔔</div>
+      <h3 id="popupTitle" class="text-xl font-extrabold text-white mb-1">แจ้งเตือน</h3>
+      <p id="popupMessage" class="text-sm text-slate-300 font-medium mb-6">รายละเอียด...</p>
+      
+      <!-- ปุ่มกดเพื่อเคลียร์และสแกนคนถัดไป -->
+      <button onclick="closePopupAndResume()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all text-sm">
+        🔄 สแกนคนถัดไป
+      </button>
     </div>
   </div>
 
@@ -103,12 +108,6 @@
     let html5QrCode = null;
     let isProcessing = false;
     let audioCtx = null;
-    let popupTimer = null;
-
-    // 🛡️ ป้องกันการสแกนรัวซ้ำซาก (Cooldown)
-    let lastScannedCode = "";
-    let lastScannedTime = 0;
-    const COOLDOWN_TIME = 4000; // หน่วงเวลา 4 วินาทีก่อนจะสแกนรหัสนักเรียนคนเดิมซ้ำได้
 
     window.onload = function() {
       const savedStaff = localStorage.getItem("currentStaff");
@@ -197,8 +196,8 @@
           return;
         }
 
-        // ลดความถี่ FPS เหลือ 5 เพื่อไม่ให้กล้องจับภาพถี่จนเกินไป
-        const config = { fps: 5, qrbox: { width: 220, height: 220 } };
+        // คืนค่าความเร็ว FPS เป็น 15 แบบเดิมให้สแกนไวทันที
+        const config = { fps: 15, qrbox: { width: 220, height: 220 } };
 
         await html5QrCode.start(
           { facingMode: "environment" },
@@ -227,15 +226,6 @@
 
     function onScanSuccess(decodedText) {
       if (isProcessing) return; 
-
-      const now = Date.now();
-      if (decodedText === lastScannedCode && (now - lastScannedTime < COOLDOWN_TIME)) {
-        return; // ข้ามถ้ารหัสดيمและยังไม่หมดเวลา Cooldown
-      }
-
-      lastScannedCode = decodedText;
-      lastScannedTime = now;
-
       processStamp(decodedText);
     }
 
@@ -254,12 +244,10 @@
           
           processStamp(decodedText);
           input.value = "";
-          setTimeout(startCamera, 1000);
 
         } catch (err) {
           showPopup("❌ ไม่พบ QR Code", "ลองถ่ายภาพใหม่อีกครั้งครับ", "error");
           input.value = "";
-          setTimeout(startCamera, 1000);
         }
       }
     }
@@ -276,6 +264,7 @@
 
     async function processStamp(payload) {
       if (isProcessing) return;
+      isProcessing = true; // ล็อคระบบทันทีเพื่อไม่ให้สแกนซ้ำซ้อนจนกว่าจะกดปุ่มถัดไป
     
       let studentId, scannedBoothId;
       
@@ -294,9 +283,6 @@
         return;
       }
     
-      isProcessing = true;
-      showPopup("⏳ กำลังบันทึก...", "กำลังส่งข้อมูลไปที่เซิร์ฟเวอร์", "info");
-    
       try {
         const { data: stdData, error: stdError } = await supabaseClient
           .from('students')
@@ -307,7 +293,6 @@
         if (stdError || !stdData) {
           showPopup("❌ ไม่พบนักเรียน", `ไม่พบรหัสนักเรียน: ${studentId}`, "error");
           playAudio(false);
-          isProcessing = false;
           return;
         }
 
@@ -323,7 +308,6 @@
         if (existingLog) {
           showPopup("⚠️ แจ้งเตือน", `นักเรียน ${realStudentId} เคยรับแสตมป์บูธนี้ไปแล้ว`, "warning");
           playAudio(false);
-          setTimeout(() => { isProcessing = false; }, 2000);
           return;
         }
 
@@ -343,11 +327,6 @@
         showPopup("❌ เชื่อมต่อล้มเหลว", "ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้", "error");
         playAudio(false);
       }
-    
-      // ล็อคระบบไว้ 2 วินาทีเพื่อให้สตาฟขยับมือออกทัน
-      setTimeout(() => {
-        isProcessing = false;
-      }, 2000);
     }
 
     function showPopup(title, message, type) {
@@ -365,18 +344,21 @@
       titleEl.innerText = title;
       msgEl.innerText = message;
 
-      if (popupTimer) clearTimeout(popupTimer);
-
       modal.classList.remove("opacity-0", "pointer-events-none");
       content.classList.remove("scale-95");
       content.classList.add("scale-100");
+    }
 
-      // ขยายเวลาโชว์ Popup เป็น 1.5 วินาที
-      popupTimer = setTimeout(() => {
-        modal.classList.add("opacity-0", "pointer-events-none");
-        content.classList.remove("scale-100");
-        content.classList.add("scale-95");
-      }, 1500);
+    // ฟังก์ชันกดปุ่มเพื่อปิด Popup และปลดล็อคให้สแกนคนถัดไปได้ทันที
+    function closePopupAndResume() {
+      const modal = document.getElementById("popupModal");
+      const content = document.getElementById("popupContent");
+
+      modal.classList.add("opacity-0", "pointer-events-none");
+      content.classList.remove("scale-100");
+      content.classList.add("scale-95");
+
+      isProcessing = false; // ปลดล็อคให้กล้องพร้อมสแกนต่อทันที
     }
 
     function playAudio(isSuccess) {
