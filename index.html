@@ -105,9 +105,9 @@
   </div>
 
   <script>
-    // ⚙️ ตั้งค่าการเชื่อมต่อ Supabase ของคุณ
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    // ⚙️ ตั้งค่าการเชื่อมต่อ Supabase ที่อัปเดตเรียบร้อยแล้ว
+    const SUPABASE_URL = 'https://vnecpsqyivkvlpgfitdq.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_7Ed2cU6jzNtBWSdpQoQv6w_uFX6ruaE';
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -161,7 +161,7 @@
         btn.disabled = false;
         btn.innerHTML = `<span>เข้าสู่ระบบ</span>`;
         errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล";
-        errDiv.classList.remove("hidden");
+        errDiv.classList.add("hidden");
       }
     }
 
@@ -194,12 +194,12 @@
         // 2. ดึงประวัติการสแกนจากตาราง scan_logs
         const { data: logsData, error: logsError } = await supabaseClient
           .from('scan_logs')
-          .select('activity_id')
+          .select('booth_id')
           .eq('student_id', currentStudentData.studentId);
 
         if (logsError) throw logsError;
         
-        myCompletedStamps = (logsData || []).map(log => log.activity_id);
+        myCompletedStamps = (logsData || []).map(log => log.booth_id);
         
         document.getElementById("stampCount").innerText = myCompletedStamps.length;
         document.getElementById("totalBoothCount").innerText = allBooths.length;
