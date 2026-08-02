@@ -148,7 +148,7 @@
           errDiv.classList.remove("hidden");
         } else {
           const studentInfo = {
-            studentId: String(data.student_id), // ใช้ student_id แบบแปลงเป็น String ให้ตรงกับตาราง log
+            studentId: String(data.student_id),
             name: data.name,
             school: data.school
           };
@@ -179,22 +179,20 @@
       document.getElementById("stampCount").innerText = "⏳";
 
       try {
-        // 1. ดึงข้อมูลบูธทั้งหมด
+        // 1. ดึงข้อมูลบูธจากตาราง activities โดยเรียงตาม activities_id
         const { data: boothsData, error: boothsError } = await supabaseClient
           .from('activities')
           .select('*')
-          .order('booth_id', { ascending: true });
+          .order('activities_id', { ascending: true });
 
         if (boothsError) throw boothsError;
         allBooths = boothsData || [];
 
-        // 2. ดึงประวัติการสแกน โดยค้นหาจาก student_id ทั้งแบบ String และตัวเลข เพื่อป้องกัน Error 400
-        const queryId = currentStudentData.studentId;
-        
+        // 2. ดึงข้อมูลประวัติการสแกนจาก scan_logs เช็คเทียบกับ student_id
         const { data: logsData, error: logsError } = await supabaseClient
           .from('scan_logs')
           .select('activity_id')
-          .eq('student_id', queryId);
+          .eq('student_id', currentStudentData.studentId);
 
         if (logsError) throw logsError;
         
@@ -215,7 +213,8 @@
       grid.innerHTML = "";
 
       allBooths.forEach((booth) => {
-        const isDone = myCompletedStamps.includes(booth.booth_id);
+        // ใช้ booth.activities_id ให้ตรงกับคอลัมน์จริงในตาราง activities
+        const isDone = myCompletedStamps.includes(booth.activities_id);
         const circleBtn = document.createElement("button");
         circleBtn.onclick = () => openModal(booth, isDone);
 
@@ -223,12 +222,12 @@
           circleBtn.className = "stamp-checked aspect-square rounded-full border-2 border-green-500 flex flex-col items-center justify-center p-1 shadow-sm transition transform active:scale-95";
           circleBtn.innerHTML = `
             <span class="text-lg">✅</span>
-            <span class="text-[9px] font-bold text-green-700 truncate w-full text-center">${booth.booth_id}</span>
+            <span class="text-[9px] font-bold text-green-700 truncate w-full text-center">${booth.activities_id}</span>
           `;
         } else {
           circleBtn.className = "bg-white aspect-square rounded-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 flex flex-col items-center justify-center p-1 shadow-sm transition transform active:scale-95";
           circleBtn.innerHTML = `
-            <span class="text-[10px] font-bold text-slate-400">${booth.booth_id}</span>
+            <span class="text-[10px] font-bold text-slate-400">${booth.activities_id}</span>
             <span class="text-[9px] font-semibold text-slate-600 truncate w-full text-center px-1">${booth.title}</span>
           `;
         }
@@ -239,7 +238,7 @@
 
     function openModal(booth, isDone) {
       document.getElementById("modalBoothTitle").innerText = booth.title;
-      document.getElementById("modalBoothLoc").innerText = `สถานที่: ${booth.location} (${booth.booth_id})`;
+      document.getElementById("modalBoothLoc").innerText = `สถานที่: ${booth.location} (${booth.activities_id})`;
       
       const modalContent = document.getElementById("modalContent");
 
@@ -260,7 +259,7 @@
           <p id="qrDetail" class="text-xs text-blue-600 font-bold mt-3 bg-blue-50 py-2 rounded-xl border border-blue-100"></p>
         `;
 
-        const qrPayload = `${currentStudentData.studentId}|${booth.booth_id}`;
+        const qrPayload = `${currentStudentData.studentId}|${booth.activities_id}`;
         
         setTimeout(() => {
           new QRCode(document.getElementById("qrcode"), {
@@ -271,7 +270,7 @@
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
           });
-          document.getElementById("qrDetail").innerText = `รหัสนักเรียน: ${currentStudentData.studentId} | บูธ: ${booth.booth_id}`;
+          document.getElementById("qrDetail").innerText = `รหัสนักเรียน: ${currentStudentData.studentId} | บูธ: ${booth.activities_id}`;
         }, 50);
       }
 
