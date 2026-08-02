@@ -179,7 +179,7 @@
       document.getElementById("stampCount").innerText = "⏳";
 
       try {
-        // 1. ดึงข้อมูลบูธจากตาราง activities โดยเรียงตาม activities_id
+        // 1. ดึงข้อมูลบูธจากตาราง activities โดยเรียงตาม activities_id (แก้จาก booth_id เป็น activities_id แล้ว)
         const { data: boothsData, error: boothsError } = await supabaseClient
           .from('activities')
           .select('*')
@@ -213,7 +213,6 @@
       grid.innerHTML = "";
 
       allBooths.forEach((booth) => {
-        // ใช้ booth.activities_id ให้ตรงกับคอลัมน์จริงในตาราง activities
         const isDone = myCompletedStamps.includes(booth.activities_id);
         const circleBtn = document.createElement("button");
         circleBtn.onclick = () => openModal(booth, isDone);
