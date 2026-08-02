@@ -3,382 +3,259 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff Stamp Scanner</title>
+  <title>ระบบสตาฟสแกนแสตมป์ - Smart Life</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- โหลดไลบรารี HTML5 QR Code Scanner สำหรับใช้กล้องมือถือสแกน -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-3 sm:p-4 relative">
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-3 sm:p-4">
 
-  <!-- 🔗 ใส่ URL จาก Google Apps Script Web App ตรงนี้ -->
-  <script>
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyZnsTCBtNCW5xumpBs4sa3mPKkJBYKcdCB51-Wi9P5fOJKUUrUa0Hii_nSrrC2e9dANA/exec";
-  </script>
-
-  <!-- 🚀 POPUP MODAL แจ้งเตือนผลลัพธ์ (1 วินาทีแล้วหายไป) -->
-  <div id="popupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 p-4">
-    <div id="popupContent" class="bg-slate-800 border border-slate-700 rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center transform scale-95 transition-transform duration-300">
-      <div id="popupIcon" class="text-4xl mb-3">🔔</div>
-      <h3 id="popupTitle" class="text-lg font-extrabold text-white mb-1">แจ้งเตือน</h3>
-      <p id="popupMessage" class="text-sm text-slate-300 font-medium">รายละเอียด...</p>
-    </div>
-  </div>
-
-  <!-- VIEW 1: หน้าล็อกอินสตาฟ -->
-  <div id="staffLoginView" class="w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700">
-    <div class="text-center mb-8">
-      <div class="inline-block p-4 rounded-2xl bg-amber-500/10 text-amber-400 mb-3 text-3xl">🛡️</div>
-      <h1 class="text-2xl font-extrabold text-white">Staff Login</h1>
-      <p class="text-xs text-slate-400 mt-1">เข้าสู่ระบบสตาฟประจำบูธกิจกรรม</p>
-    </div>
-
-    <form onsubmit="handleStaffLogin(event)" class="space-y-4">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl p-5 border border-slate-100">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
       <div>
-        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Staff Username</label>
-        <input type="text" id="staffUser" required placeholder="เช่น robot01"
-               class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <h1 class="font-bold text-base text-slate-800">📸 ระบบสตาฟสแกนแสตมป์</h1>
+        <p class="text-xs text-slate-400">สัปดาห์วิทยาศาสตร์ Smart Life</p>
       </div>
-
-      <div>
-        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
-        <input type="password" id="staffPass" required placeholder="••••"
-               class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-      </div>
-
-      <div id="loginError" class="hidden text-red-400 text-xs text-center font-medium mt-2"></div>
-
-      <button type="submit" id="loginBtn" 
-              class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center">
-        <span>เข้าสู่ระบบสตาฟ</span>
-      </button>
-    </form>
-  </div>
-
-  <!-- VIEW 2: หน้าเครื่องสแกนประทับตรา -->
-  <div id="scannerView" class="hidden w-full max-w-md bg-slate-800 rounded-3xl shadow-2xl p-5 border border-slate-700">
-    
-    <!-- Header ข้อมูลบูธ -->
-    <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-4">
-      <div>
-        <span id="boothBadge" class="bg-amber-500/20 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase">BOOTH</span>
-        <h2 id="boothTitleDisplay" class="font-bold text-base text-white mt-1">ชื่อบูธ...</h2>
-        <p id="boothLocDisplay" class="text-xs text-slate-400"></p>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="restartCamera()" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-400 px-3 py-1.5 rounded-xl transition" title="รีเฟรชกล้อง">
-          🔄 กล้อง
-        </button>
-        <button onclick="staffLogout()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-xl transition">
-          ออก
-        </button>
+      <div id="boothBadge" class="text-xs bg-blue-50 text-blue-600 font-semibold px-3 py-1.5 rounded-xl border border-blue-100">
+        รอเลือกบูธ
       </div>
     </div>
 
-    <!-- ช่องสำหรับ Render แสดงกล้อง Live -->
-    <div class="relative rounded-2xl overflow-hidden bg-black border border-slate-700 mb-3 min-h-[250px] flex items-center justify-center">
-      <div id="reader" class="w-full"></div>
+    <!-- เลือกบูธประจำตัวสตาฟ -->
+    <div class="mb-4 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+      <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">เลือกบูธที่คุณประจำการ</label>
+      <select id="staffBoothSelect" onchange="updateStaffBooth()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+        <option value="">-- กำลังโหลดรายชื่อบูธ... --</option>
+      </select>
     </div>
 
-    <!-- ปุ่มเลือกถ่ายภาพ / อัปโหลดภาพ QR Code สำรอง -->
-    <div class="mb-4 text-center">
-      <label for="qrFileInput" class="cursor-pointer inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-amber-400 font-bold text-xs px-4 py-2.5 rounded-xl border border-amber-500/30 transition shadow-sm w-full justify-center">
-        📷 ถ่ายรูป / เลือกภาพ QR Code (สำรอง)
-      </label>
-      <input type="file" id="qrFileInput" accept="image/*" capture="environment" class="hidden" onchange="scanFromFile(this)">
-    </div>
-
-    <!-- ช่องยิงบาร์โค้ด / ป้อนรหัสเอง -->
+    <!-- ส่วนสแกนกล้อง -->
     <div class="mb-4">
-      <form onsubmit="handleManualSubmit(event)" class="flex gap-2">
-        <input type="text" id="manualInput" placeholder="หรือยิง/พิมพ์ รหัสนักเรียนที่นี่"
-               class="flex-1 px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
-        <button type="submit" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-4 rounded-xl transition">
+      <div id="reader" class="w-full rounded-2xl overflow-hidden border border-slate-200 bg-black"></div>
+    </div>
+
+    <!-- ฟอร์มกรอกรหัสสำรอง (กรณีสแกนกล้องไม่ได้) -->
+    <div class="mb-4 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+      <p class="text-xs font-semibold text-slate-600 mb-2">หรือกรอกรหัสนักเรียนด้วยตนเอง</p>
+      <div class="flex gap-2">
+        <input type="text" id="manualStudentId" placeholder="เช่น 34297 หรือ s34297" 
+               class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button onclick="handleManualSubmit()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition active:scale-95 shadow-sm">
           บันทึก
         </button>
-      </form>
+      </div>
+    </div>
+
+    <!-- กล่องแสดงสถานะผลการสแกน -->
+    <div id="resultBox" class="hidden p-4 rounded-2xl text-center border transition-all">
+      <p id="resultIcon" class="text-3xl mb-1"></p>
+      <p id="resultTitle" class="font-bold text-sm"></p>
+      <p id="resultDesc" class="text-xs mt-0.5 text-slate-500"></p>
     </div>
   </div>
 
   <script>
-    let currentStaff = null;
-    let html5QrCode = null;
-    let isProcessing = false;
-    let audioCtx = null;
-    let popupTimer = null;
+    const SUPABASE_URL = 'https://vnecpsqyivkvlpgfitdq.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_7Ed2cU6jzNtBWSdpQoQv6w_uFX6ruaE';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    window.onload = function() {
-      const savedStaff = localStorage.getItem("currentStaff");
-      if (savedStaff) {
-        showScanner(JSON.parse(savedStaff));
-      }
+    let html5QrCode = null;
+    let selectedBoothId = localStorage.getItem("staffSelectedBooth") || "";
+
+    window.onload = async function() {
+      await loadBoothDropdown();
+      initScanner();
     };
 
-    window.addEventListener('beforeunload', () => {
-      if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(() => {});
-      }
-    });
+    // โหลดรายชื่อบูธใส่ Dropdown จากตาราง activities (ใช้ activity_id)
+    async function loadBoothDropdown() {
+      const select = document.getElementById("staffBoothSelect");
+      try {
+        const { data, error } = await supabaseClient
+          .from('activities')
+          .select('activity_id, title')
+          .order('activity_id', { ascending: true });
 
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        if (error) throw error;
+
+        select.innerHTML = '<option value="">-- กรุณาเลือกบูธของคุณ --</option>';
+        (data || []).forEach(booth => {
+          const opt = document.createElement("option");
+          opt.value = booth.activity_id;
+          opt.textContent = `(${booth.activity_id}) ${booth.title}`;
+          if (booth.activity_id === selectedBoothId) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+
+        if (selectedBoothId) {
+          document.getElementById("boothBadge").innerText = `บูธ: ${selectedBoothId}`;
+        }
+      } catch (err) {
+        console.error("Error loading booths:", err);
+        select.innerHTML = '<option value="">โหลดรายชื่อบูธไม่สำเร็จ</option>';
       }
     }
 
-    async function callApi(payload) {
-      const response = await fetch(GAS_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
+    function updateStaffBooth() {
+      const select = document.getElementById("staffBoothSelect");
+      selectedBoothId = select.value;
+      localStorage.setItem("staffSelectedBooth", selectedBoothId);
+      
+      if (selectedBoothId) {
+        document.getElementById("boothBadge").innerText = `บูธ: ${selectedBoothId}`;
+      } else {
+        document.getElementById("boothBadge").innerText = `รอเลือกบูธ`;
+      }
+    }
+
+    // เริ่มต้นใช้งานกล้องสแกน QR Code
+    function initScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        config, 
+        onScanSuccess,
+        onScanFailure
+      ).catch(err => {
+        console.warn("ไม่สามารถเปิดกล้องได้อัตโนมัติ:", err);
       });
-      return await response.json();
     }
 
-    async function handleStaffLogin(e) {
-      e.preventDefault();
-      initAudio();
+    // เมื่อสแกน QR Code สำเร็จ (รูปแบบที่ส่งมาคือ studentId|activity_id)
+    async function onScanSuccess(decodedText) {
+      console.log("Scanned:", decodedText);
+      
+      let studentId = "";
+      let targetBooth = "";
 
-      const u = document.getElementById("staffUser").value;
-      const p = document.getElementById("staffPass").value;
-      const btn = document.getElementById("loginBtn");
-      const err = document.getElementById("loginError");
-
-      btn.disabled = true;
-      btn.innerText = "กำลังตรวจสอบ...";
-      err.classList.add("hidden");
-
-      try {
-        const res = await callApi({ action: 'staffLogin', username: u, password: p });
-        btn.disabled = false;
-        btn.innerText = "เข้าสู่ระบบสตาฟ";
-
-        if (res.success) {
-          localStorage.setItem("currentStaff", JSON.stringify(res.staff));
-          showScanner(res.staff);
-        } else {
-          err.innerText = res.message;
-          err.classList.remove("hidden");
-        }
-      } catch (error) {
-        btn.disabled = false;
-        btn.innerText = "เข้าสู่ระบบสตาฟ";
-        err.innerText = "เชื่อมต่อระบบล้มเหลว กรุณาลองใหม่อีกครั้ง";
-        err.classList.remove("hidden");
+      if (decodedText.includes("|")) {
+        const parts = decodedText.split("|");
+        studentId = parts[0].trim();
+        targetBooth = parts[1].trim();
+      } else {
+        studentId = decodedText.trim();
       }
+
+      // ถ้าหน้าสตาฟเลือกบูธไว้ ให้ใช้บูธที่เลือก หรือถ้าใน QR มีระบุมา ให้ยึดตามที่สตาฟล็อกอินเลือกไว้เป็นหลัก
+      const boothToRecord = selectedBoothId || targetBooth;
+      
+      if (!boothToRecord) {
+        showResult(false, "⚠️ กรุณาเลือกบูธประจำตัวก่อนสแกน", "คุณยังไม่ได้เลือกช่องบูธด้านบน");
+        return;
+      }
+
+      await processStamp(studentId, boothToRecord);
     }
 
-    function showScanner(staff) {
-      currentStaff = staff;
-      document.getElementById("staffLoginView").classList.add("hidden");
-      document.getElementById("scannerView").classList.remove("hidden");
-
-      document.getElementById("boothBadge").innerText = staff.boothId;
-      document.getElementById("boothTitleDisplay").innerText = staff.title;
-      document.getElementById("boothLocDisplay").innerText = staff.location;
-
-      startCamera();
+    function onScanFailure(error) {
+      // ปล่อยว่างไว้เพื่อไม่ให้ Console รกเวลากล้องยังหา QR ไม่เจอ
     }
 
-    async function startCamera() {
+    async function handleManualSubmit() {
+      const input = document.getElementById("manualStudentId");
+      const studentId = input.value.trim();
+
+      if (!studentId) {
+        alert("กรุณากรอกรหัสนักเรียน");
+        return;
+      }
+
+      if (!selectedBoothId) {
+        alert("กรุณาเลือกบูธประจำตัวของคุณก่อนบันทึก");
+        return;
+      }
+
+      await processStamp(studentId, selectedBoothId);
+      input.value = "";
+    }
+
+    // ฟังก์ชันบันทึกข้อมูลลงตาราง scan_logs (ใช้ activity_id ทั้งระบบ)
+    async function processStamp(studentId, activityId) {
+      const box = document.getElementById("resultBox");
+      
       try {
-        if (!html5QrCode) {
-          html5QrCode = new Html5Qrcode("reader");
+        // 1. ตรวจสอบว่ามีนักเรียนคนนี้อยู่ในระบบไหม
+        const { data: stdData, error: stdError } = await supabaseClient
+          .from('students')
+          .select('*')
+          .eq('student_id', studentId)
+          .single();
+
+        if (stdError || !stdData) {
+          // ลองเช็คช่อง username เผื่อกรอกรหัสสั้นมา
+          const { data: stdUserdata, error: stdUserError } = await supabaseClient
+            .from('students')
+            .select('*')
+            .eq('username', studentId)
+            .single();
+
+          if (stdUserError || !stdUserdata) {
+            showResult(false, "❌ ไม่พบรหัสนักเรียนนี้ในระบบ", `ID: ${studentId}`);
+            return;
+          }
+          studentId = String(stdUserdata.student_id);
         }
 
-        if (html5QrCode.isScanning) {
+        // 2. ตรวจสอบว่าเคยสแกนบูธนี้ไปแล้วหรือยัง
+        const { data: existingLog, error: logError } = await supabaseClient
+          .from('scan_logs')
+          .select('*')
+          .eq('student_id', studentId)
+          .eq('activity_id', activityId)
+          .maybeSingle();
+
+        if (existingLog) {
+          showResult(false, "⚠️ นักเรียนคนนี้เคยสะสมบูธนี้แล้ว", `รหัส: ${studentId} | บูธ: ${activityId}`);
           return;
         }
 
-        const config = { fps: 15, qrbox: { width: 220, height: 220 } };
+        // 3. บันทึกข้อมูลลงตาราง scan_logs (ใช้ activity_id)
+        const { error: insertError } = await supabaseClient
+          .from('scan_logs')
+          .insert([
+            { student_id: studentId, activity_id: activityId }
+          ]);
 
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          onScanSuccess
-        );
+        if (insertError) throw insertError;
+
+        showResult(true, "🎉 บันทึกแสตมป์สำเร็จ!", `รหัสนักเรียน: ${studentId} ได้รับแสตมป์บูธ ${activityId} แล้ว`);
+
       } catch (err) {
-        console.error("Camera Error:", err);
-        showPopup("❌ เปิดกล้องไม่สำเร็จ", "กรุณาอนุญาตสิทธิ์กล้องในเบราว์เซอร์", "error");
+        console.error("Database error:", err);
+        showResult(false, "❌ เกิดข้อผิดพลาดในการบันทึก", err.message);
       }
     }
 
-    async function restartCamera() {
-      try {
-        if (html5QrCode) {
-          if (html5QrCode.isScanning) {
-            await html5QrCode.stop();
-          }
-          await html5QrCode.clear();
-        }
-      } catch (e) {}
-      html5QrCode = null;
-      showPopup("🔄 รีสตาร์ทกล้อง", "กำลังเปิดกล้องใหม่...", "info");
-      setTimeout(startCamera, 500);
-    }
+    functionaccouchement
+    function showResult(isSuccess, title, desc) {
+      const box = document.getElementById("resultBox");
+      const icon = document.getElementById("resultIcon");
+      const titleEl = document.getElementById("resultTitle");
+      const descEl = document.getElementById("resultDesc");
 
-    function onScanSuccess(decodedText) {
-      if (isProcessing) return; 
-      processStamp(decodedText);
-    }
-
-    async function scanFromFile(input) {
-      if (input.files && input.files[0]) {
-        initAudio();
-        const file = input.files[0];
-
-        try {
-          if (html5QrCode && html5QrCode.isScanning) {
-            await html5QrCode.stop();
-          }
-
-          const fileScanner = new Html5Qrcode("reader");
-          const decodedText = await fileScanner.scanFile(file, true);
-          
-          processStamp(decodedText);
-          input.value = "";
-          setTimeout(startCamera, 1000);
-
-        } catch (err) {
-          showPopup("❌ ไม่พบ QR Code", "ลองถ่ายภาพใหม่อีกครั้งครับ", "error");
-          input.value = "";
-          setTimeout(startCamera, 1000);
-        }
-      }
-    }
-
-    function handleManualSubmit(e) {
-      e.preventDefault();
-      initAudio();
-      const val = document.getElementById("manualInput").value.trim();
-      if (val) {
-        processStamp(val);
-        document.getElementById("manualInput").value = "";
-      }
-    }
-
-    async function processStamp(payload) {
-      if (isProcessing) return;
-    
-      let studentId, scannedBoothId;
-      
-      if (payload.includes('|')) {
-        const parts = payload.split('|');
-        studentId = parts[0].trim();
-        scannedBoothId = parts[1].trim();
+      box.classList.remove("hidden");
+      if (isSuccess) {
+        box.className = "p-4 rounded-2xl text-center border bg-green-50 border-green-200 text-green-800 transition-all";
+        icon.innerText = "✅";
       } else {
-        studentId = payload.trim();
-        scannedBoothId = currentStaff.boothId;
+        box.className = "p-4 rounded-2xl text-center border bg-red-50 border-red-200 text-red-800 transition-all";
+        icon.innerText = "⚠️";
       }
-    
-      if (scannedBoothId !== currentStaff.boothId) {
-        showPopup("❌ ผิดบูธ!", `QR นี้เป็นของ ${scannedBoothId} (คุณอยู่บูธ ${currentStaff.boothId})`, "error");
-        playAudio(false);
-        return;
-      }
-    
-      isProcessing = true;
-      showPopup("⏳ กำลังบันทึก...", "กำลังส่งข้อมูลไปที่เซิร์ฟเวอร์", "info");
-    
-      try {
-        const res = await callApi({ 
-          action: 'recordStamp', 
-          boothId: studentId,         
-          studentId: scannedBoothId   
-        });
-    
-        if (res.success) {
-          showPopup("✅ ประทับตราสำเร็จ", res.message, "success");
-          playAudio(true);
-        } else if (res.isDuplicate) {
-          showPopup("⚠️ แจ้งเตือน", res.message, "warning");
-          playAudio(false);
-        } else {
-          showPopup("❌ ผิดพลาด", res.message, "error");
-          playAudio(false);
-        }
-      } catch (err) {
-        showPopup("❌ เชื่อมต่อล้มเหลว", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
-        playAudio(false);
-      }
-    
-      setTimeout(() => {
-        isProcessing = false;
-      }, 1500);
-    }
-
-    // ฟังก์ชันจัดการแสดง Popup Modal แบบ 1 วินาทีหาย
-    function showPopup(title, message, type) {
-      const modal = document.getElementById("popupModal");
-      const content = document.getElementById("popupContent");
-      const titleEl = document.getElementById("popupTitle");
-      const msgEl = document.getElementById("popupMessage");
-      const iconEl = document.getElementById("popupIcon");
-
-      // กำหนดไอคอนตามประเภท
-      if (type === 'success') iconEl.innerText = "✅";
-      else if (type === 'error') iconEl.innerText = "❌";
-      else if (type === 'warning') iconEl.innerText = "⚠️";
-      else iconEl.innerText = "⏳";
 
       titleEl.innerText = title;
-      msgEl.innerText = message;
+      descEl.innerText = desc;
 
-      if (popupTimer) clearTimeout(popupTimer);
-
-      // แสดง Popup
-      modal.classList.remove("opacity-0", "pointer-events-none");
-      content.classList.remove("scale-95");
-      content.classList.add("scale-100");
-
-      // ตั้งเวลาซ่อนอัตโนมัติ (1000 มิลลิวินาที = 1 วินาที)
-      popupTimer = setTimeout(() => {
-        modal.classList.add("opacity-0", "pointer-events-none");
-        content.classList.remove("scale-100");
-        content.classList.add("scale-95");
-      }, 1000);
-    }
-
-    function playAudio(isSuccess) {
-      try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        if (isSuccess) {
-          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        } else {
-          osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-        }
-
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
-      } catch (e) {
-        console.error("Audio error", e);
-      }
-    }
-
-    async function staffLogout() {
-      if (html5QrCode && html5QrCode.isScanning) {
-        try {
-          await html5QrCode.stop();
-          await html5QrCode.clear();
-        } catch (err) {}
-      }
-      html5QrCode = null;
-      resetToLogin();
-    }
-
-    function resetToLogin() {
-      localStorage.removeItem("currentStaff");
-      currentStaff = null;
-      document.getElementById("scannerView").classList.add("hidden");
-      document.getElementById("staffLoginView").classList.remove("hidden");
+      // ซ่อนข้อความแจ้งเตือนอัตโนมัติหลังผ่านไป 4 วินาทีเพื่อให้พร้อมสแกนคนถัดไป
+      setTimeout(() => {
+        box.classList.add("hidden");
+      }, 4000);
     }
   </script>
 </body>
