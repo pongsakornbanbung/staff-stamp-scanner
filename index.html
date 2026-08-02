@@ -75,6 +75,14 @@
     <!-- ปรับแก้ตรงนี้: เอา max-h และ overflow ออก เพื่อให้แสดงครบทุกอันแบบไม่มี scrollbar ด้านข้าง -->
     <div id="stampGrid" class="grid grid-cols-4 gap-2.5 p-3 bg-slate-50 rounded-2xl border border-slate-200/80 items-center">
     </div>
+
+    <!-- 🟢 นำปุ่มรับเกียรติบัตรมาวางไว้ตรงนี้ (ต่อท้ายตารางข้างในกรอบขาว) -->
+    <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+      <button id="certificateBtn" onclick="claimCertificate()" disabled
+              class="w-full bg-slate-200 text-slate-400 font-bold py-3 px-6 rounded-2xl cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm shadow-none">
+        <span>🔒</span> สะสมครบ 12 บูธเพื่อรับเกียรติบัตร
+      </button>
+    </div>
   </div>
 
   <!-- MODAL: แสดง QR Code -->
