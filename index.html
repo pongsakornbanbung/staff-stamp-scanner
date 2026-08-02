@@ -208,6 +208,18 @@
         document.getElementById("totalBoothCount").innerText = allBooths.length;
         renderStampGrid();
 
+        // 🏆 จัดการสถานะปุ่มเกียรติบัตร (เงื่อนไข: ตั้งแต่ 12 บูธขึ้นไป)
+        const certBtn = document.getElementById("certificateBtn");
+        if (earnedCount >= 12) {
+          certBtn.disabled = false;
+          certBtn.className = "w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer active:scale-98";
+          certBtn.innerHTML = `<span>🏆</span> รับเกียรติบัตร`;
+        } else {
+          certBtn.disabled = true;
+          certBtn.className = "w-full bg-slate-200 text-slate-400 font-bold py-3 px-6 rounded-2xl cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm shadow-none";
+          certBtn.innerHTML = `<span>🔒</span> รับเกียรติบัตร`;
+        }
+
       } catch (err) {
         console.error("Error fetching stamps:", err);
         document.getElementById("stampCount").innerText = "0";
