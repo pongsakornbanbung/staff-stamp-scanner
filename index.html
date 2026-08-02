@@ -332,7 +332,7 @@
         btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> กำลังสร้างรูป...`;
 
         try {
-            // 2. โหลดฟอนต์ Prompt จาก Google Fonts (น้ำหนัก 400 คือความหนาปกติ ไม่หนาเกินไป)
+            // 2. โหลดฟอนต์ Prompt จาก Google Fonts เข้ามาในระบบ Canvas ล่วงหน้า
             const font = new FontFace('Prompt', 'https://fonts.gstatic.com/s/prompt/v10/-W_6XJnvPqF7i9J9WOgcjA.woff2');
             await font.load();
             document.fonts.add(font);
@@ -357,15 +357,15 @@
             // 5. วาดรูป Template ลงบน Canvas
             ctx.drawImage(img, 0, 0);
 
-            // 6. ตั้งค่าสไตล์ข้อความ (ปรับความหนาเป็น 400 / ปกติ, ขนาด 18px)
+            // 6. ตั้งค่าสไตล์ข้อความ (ปรับความหนาเป็น 400 ให้บางลง, ขนาด 18px)
             const fontSize = 18; 
-            ctx.font = `400 ${fontSize}px Prompt, sans-serif`; // เปลี่ยนจาก bold เป็น 400 (ความหนาปกติ)
+            ctx.font = `400 ${fontSize}px Prompt, sans-serif`; 
             ctx.fillStyle = '#090082'; // สีน้ำเงินตามต้องการ
             ctx.textAlign = 'center';   // จัดกึ่งกลาง
 
-            // คำนวณตำแหน่งแกน X (กึ่งกลาง) และ Y ตามที่คุณระบุ
+            // คำนวณตำแหน่งแกน X (กึ่งกลาง) และ Y ที่ 445 ตามต้องการ
             const xCenter = canvas.width / 2;
-            const yPos = 445; // ตำแหน่ง Y ตามที่ต้องการ
+            const yPos = 445; 
 
             // 7. วาดข้อความชื่อนักเรียนลงบน Canvas
             ctx.fillText(studentName, xCenter, yPos);
