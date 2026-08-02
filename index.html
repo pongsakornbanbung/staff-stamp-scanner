@@ -319,21 +319,22 @@
     async function claimCertificate() {
         if (!currentStudentData) return;
 
-        // 1. เตรียมข้อมูล
         const btn = document.getElementById("certificateBtn");
         const originalBtnText = btn.innerHTML;
         
         const imageUrl = 'https://raw.githubusercontent.com/pongsakornbanbung/image/main/path_to_your_certificate_template.png';
         const studentName = currentStudentData.name;
 
-        // แสดงสถานะกำลังโหลด
         btn.disabled = true;
         btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> กำลังสร้างรูป...`;
 
         try {
+            // 1. รอให้แน่ใจว่าฟอนต์ Prompt โหลดเสร็จเรียบร้อย
+            await document.fonts.load("bold 40px 'Prompt'");
+
             // 2. โหลดรูปภาพต้นฉบับ
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // ป้องกันปัญหา CORS ตอนดึงรูปจาก GitHub
+            img.crossOrigin = "Anonymous";
             img.src = imageUrl;
             
             await new Promise((resolve, reject) => {
@@ -341,33 +342,32 @@
                 img.onerror = reject;
             });
 
-            // 3. สร้าง Canvas ตามขนาดจริงของรูปภาพ
+            // 3. สร้าง Canvas ตามขนาดจริงของรูป
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
 
-            // 4. วาดรูป Template ลงบน Canvas
             ctx.drawImage(img, 0, 0);
 
-            // 5. คำนวณสัดส่วนขนาดฟอนต์และตำแหน่ง Y ให้พอดีกับภาพความละเอียดสูง
-            // (เนื่องจากรูปมีความละเอียดสูงมาก การใช้ 18px ตรงๆ จะเล็กเกินไป ต้องคูณสัดส่วนความสูงภาพครับ)
-            const scaleFactor = canvas.height / 800; 
-            const fontSize = Math.round(45 * scaleFactor); // ปรับขนาดให้พอดีตา (ความหนา 400 ปกติ ไม่หนาทึบ)
+            // 4. คำนวณขนาดฟอนต์ให้พอดีกับรูปความละเอียดสูง (เทียบจากสัดส่วนความสูงภาพจริง)
+            // ถ้าภาพสูงประมาณ 1000-2000px ขนาดฟอนต์จะถูกขยายขึ้นให้อ่านออกสวยงาม
+            const fontSize = Math.round(canvas.height * 0.055); 
 
-            ctx.font = `400 ${fontSize}px 'Prompt', sans-serif`;
-            ctx.fillStyle = '#090082'; // สีน้ำเงินตามต้องการ
-            ctx.textAlign = 'center';   // จัดกึ่งกลาง
+            ctx.font = `bold ${fontSize}px 'Prompt', sans-serif`;
+            ctx.fillStyle = '#090082';
+            ctx.textAlign = 'center';
 
             const xCenter = canvas.width / 2;
             
-            // ตำแหน่ง Y คำนวณตามสัดส่วนความสูงจริง เพื่อไม่ให้ตกขอบหรือไปทับข้อความอื่น
-            const yPos = 445 * scaleFactor; 
+            // 5. ปรับตำแหน่ง Y ตามที่คุณต้องการ (445 เทียบตามสัดส่วนความสูงจริงของรูป)
+            // หากรูปต้นฉบับของคุณมีความสูงมาตรฐาน ให้ใช้สัดส่วนนี้ หรือปรับตัวเลขคูณด้านหลังได้เลยครับ
+            const baseHeight = 1200; // หรือปรับตามความสูงจริงของรูป template คุณ
+            const yPos = 445 * (canvas.height / 800); // ปรับตำแหน่ง Y ลงมาที่ 445 ตามสัดส่วน
 
-            // 6. วาดชื่อนักเรียนลงบน Canvas
             ctx.fillText(studentName, xCenter, yPos);
 
-            // 7. สั่งดาวน์โหลดไฟล์ PNG
+            // 6. ดาวน์โหลดไฟล์ PNG
             const dataUrl = canvas.toDataURL('image/png', 1.0);
             const link = document.createElement('a');
             link.href = dataUrl;
@@ -380,7 +380,6 @@
             console.error("Error generating PNG:", error);
             alert('ไม่สามารถสร้างเกียรติบัตรได้ กรุณาลองใหม่อีกครั้ง');
         } finally {
-            // คืนค่าปุ่มให้กลับมาเหมือนเดิม
             btn.disabled = false;
             btn.innerHTML = originalBtnText;
         }
