@@ -172,7 +172,6 @@
       document.getElementById("stampCount").innerText = "⏳";
 
       try {
-        // ดึงข้อมูลบูธ เรียงตาม activity_id
         const { data: boothsData, error: boothsError } = await supabaseClient
           .from('activities')
           .select('*')
@@ -181,7 +180,6 @@
         if (boothsError) throw boothsError;
         allBooths = boothsData || [];
 
-        // ดึงประวัติการสแกน เช็ค activity_id
         const { data: logsData, error: logsError } = await supabaseClient
           .from('scan_logs')
           .select('activity_id')
