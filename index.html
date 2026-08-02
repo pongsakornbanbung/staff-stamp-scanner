@@ -329,8 +329,8 @@
         btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> กำลังสร้างรูป...`;
 
         try {
-            // 1. รอให้แน่ใจว่าฟอนต์ Prompt โหลดเสร็จเรียบร้อย
-            await document.fonts.load("bold 40px 'Prompt'");
+            // 1. โหลดฟอนต์ Prompt น้ำหนักปกติ (400) ล่วงหน้า
+            await document.fonts.load("400 40px 'Prompt'");
 
             // 2. โหลดรูปภาพต้นฉบับ
             const img = new Image();
@@ -350,20 +350,18 @@
 
             ctx.drawImage(img, 0, 0);
 
-            // 4. คำนวณขนาดฟอนต์ให้พอดีกับรูปความละเอียดสูง (เทียบจากสัดส่วนความสูงภาพจริง)
-            // ถ้าภาพสูงประมาณ 1000-2000px ขนาดฟอนต์จะถูกขยายขึ้นให้อ่านออกสวยงาม
-            const fontSize = Math.round(canvas.height * 0.055); 
+            // 4. ตั้งค่าขนาดฟอนต์ (ปรับขนาดตามความสูงภาพ หรือกำหนดตัวเลขคงที่ตามต้องการ)
+            const fontSize = Math.round(canvas.height * 0.045); 
 
-            ctx.font = `bold ${fontSize}px 'Prompt', sans-serif`;
+            // เปลี่ยนจาก bold เป็น 400 เพื่อให้ความหนาบางลงสวยงาม
+            ctx.font = `400 ${fontSize}px 'Prompt', sans-serif`;
             ctx.fillStyle = '#090082';
             ctx.textAlign = 'center';
 
             const xCenter = canvas.width / 2;
             
-            // 5. ปรับตำแหน่ง Y ตามที่คุณต้องการ (445 เทียบตามสัดส่วนความสูงจริงของรูป)
-            // หากรูปต้นฉบับของคุณมีความสูงมาตรฐาน ให้ใช้สัดส่วนนี้ หรือปรับตัวเลขคูณด้านหลังได้เลยครับ
-            const baseHeight = 1200; // หรือปรับตามความสูงจริงของรูป template คุณ
-            const yPos = 445 * (canvas.height / 800); // ปรับตำแหน่ง Y ลงมาที่ 445 ตามสัดส่วน
+            // 5. ล็อกตำแหน่ง Y ไว้ที่ 445 ตรงๆ ตามที่ต้องการ (ไม่ต้องคูณสัดส่วนเพิ่ม)
+            const yPos = 445; 
 
             ctx.fillText(studentName, xCenter, yPos);
 
