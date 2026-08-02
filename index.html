@@ -76,11 +76,17 @@
     <div id="stampGrid" class="grid grid-cols-4 gap-2.5 p-3 bg-slate-50 rounded-2xl border border-slate-200/80 items-center">
     </div>
 
-    <!-- 🟢 นำปุ่มรับเกียรติบัตรมาวางไว้ตรงนี้ (ต่อท้ายตารางข้างในกรอบขาว) -->
+    <!-- 🟢 ส่วนข้อความอธิบายและปุ่มรับเกียรติบัตร -->
     <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+      <!-- ข้อความอธิบายด้านบนปุ่ม -->
+      <p class="text-xs text-slate-500 font-medium mb-2">
+        💡 สะสมสแตมป์ครบ 12 กิจกรรม เพื่อรับเกียรติบัตร
+      </p>
+      
+      <!-- ปุ่มรับเกียรติบัตร -->
       <button id="certificateBtn" onclick="claimCertificate()" disabled
               class="w-full bg-slate-200 text-slate-400 font-bold py-3 px-6 rounded-2xl cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm shadow-none">
-        <span>🔒</span> สะสมครบ 12 บูธเพื่อรับเกียรติบัตร
+        <span>🔒</span> รับเกียรติบัตร
       </button>
     </div>
   </div>
