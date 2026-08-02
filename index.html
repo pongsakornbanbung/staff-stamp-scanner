@@ -323,7 +323,6 @@
         const btn = document.getElementById("certificateBtn");
         const originalBtnText = btn.innerHTML;
         
-        // ลิงก์รูป Template จาก GitHub ของคุณ
         const imageUrl = 'https://raw.githubusercontent.com/pongsakornbanbung/image/main/path_to_your_certificate_template.png';
         const studentName = currentStudentData.name;
 
@@ -332,45 +331,43 @@
         btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> กำลังสร้างรูป...`;
 
         try {
-            // 2. โหลดฟอนต์ Prompt จาก Google Fonts เข้ามาในระบบ Canvas ล่วงหน้า
-            const font = new FontFace('Prompt', 'https://fonts.gstatic.com/s/prompt/v10/-W_6XJnvPqF7i9J9WOgcjA.woff2');
-            await font.load();
-            document.fonts.add(font);
-
-            // 3. โหลดรูปภาพต้นฉบับ
+            // 2. โหลดรูปภาพต้นฉบับ
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // สำคัญมาก สำหรับการโหลดรูปข้าม Domain จาก GitHub
+            img.crossOrigin = "Anonymous"; // ป้องกันปัญหา CORS ตอนดึงรูปจาก GitHub
             img.src = imageUrl;
             
-            // รอโหลดรูปเสร็จ
             await new Promise((resolve, reject) => {
                 img.onload = resolve;
                 img.onerror = reject;
             });
 
-            // 4. สร้าง Canvas ตามขนาดจริงของรูปภาพ
+            // 3. สร้าง Canvas ตามขนาดจริงของรูปภาพ
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
 
-            // 5. วาดรูป Template ลงบน Canvas
+            // 4. วาดรูป Template ลงบน Canvas
             ctx.drawImage(img, 0, 0);
 
-            // 6. ตั้งค่าสไตล์ข้อความ (กำหนดขนาดฟอนต์ 18px ตามที่คุณต้องการ)
-            const fontSize = 18; 
-            ctx.font = `bold ${fontSize}px Prompt, sans-serif`;
+            // 5. คำนวณสัดส่วนขนาดฟอนต์และตำแหน่ง Y ให้พอดีกับภาพความละเอียดสูง
+            // (เนื่องจากรูปมีความละเอียดสูงมาก การใช้ 18px ตรงๆ จะเล็กเกินไป ต้องคูณสัดส่วนความสูงภาพครับ)
+            const scaleFactor = canvas.height / 800; 
+            const fontSize = Math.round(45 * scaleFactor); // ปรับขนาดให้พอดีตา (ความหนา 400 ปกติ ไม่หนาทึบ)
+
+            ctx.font = `400 ${fontSize}px 'Prompt', sans-serif`;
             ctx.fillStyle = '#090082'; // สีน้ำเงินตามต้องการ
             ctx.textAlign = 'center';   // จัดกึ่งกลาง
 
-            // คำนวณตำแหน่งแกน X (กึ่งกลาง) และ Y ตามที่คุณระบุ
             const xCenter = canvas.width / 2;
-            const yPos = 445; // ตำแหน่ง Y ตามที่ต้องการ
+            
+            // ตำแหน่ง Y คำนวณตามสัดส่วนความสูงจริง เพื่อไม่ให้ตกขอบหรือไปทับข้อความอื่น
+            const yPos = 445 * scaleFactor; 
 
-            // 7. วาดข้อความชื่อนักเรียนลงบน Canvas
+            // 6. วาดชื่อนักเรียนลงบน Canvas
             ctx.fillText(studentName, xCenter, yPos);
 
-            // 8. สั่งดาวน์โหลดไฟล์ PNG
+            // 7. สั่งดาวน์โหลดไฟล์ PNG
             const dataUrl = canvas.toDataURL('image/png', 1.0);
             const link = document.createElement('a');
             link.href = dataUrl;
