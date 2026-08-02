@@ -159,7 +159,7 @@
         btn.disabled = false;
         btn.innerHTML = `<span>เข้าสู่ระบบ</span>`;
         errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล";
-        errDiv.classList.add("hidden");
+        errDiv.classList.remove("hidden");
       }
     }
 
@@ -179,7 +179,7 @@
       document.getElementById("stampCount").innerText = "⏳";
 
       try {
-        // 1. ดึงข้อมูลบูธจากตาราง activities โดยเรียงตาม activities_id (แก้จาก booth_id เป็น activities_id แล้ว)
+        // 1. ดึงข้อมูลบูธจากตาราง activities (ใช้ activities_id)
         const { data: boothsData, error: boothsError } = await supabaseClient
           .from('activities')
           .select('*')
@@ -188,7 +188,7 @@
         if (boothsError) throw boothsError;
         allBooths = boothsData || [];
 
-        // 2. ดึงข้อมูลประวัติการสแกนจาก scan_logs เช็คเทียบกับ student_id
+        // 2. ดึงข้อมูลประวัติการสแกนจาก scan_logs (ใช้ activity_id และ student_id)
         const { data: logsData, error: logsError } = await supabaseClient
           .from('scan_logs')
           .select('activity_id')
@@ -204,7 +204,7 @@
 
       } catch (err) {
         console.error("Error fetching stamps:", err);
-        document.getElementById("stampCount").innerText = "❌";
+        document.getElementById("stampCount").innerText = "0"; // ป้องกันหน้าตาพัง ให้แสดงเป็น 0 แทนเครื่องหมายกากบาท
       }
     }
 
