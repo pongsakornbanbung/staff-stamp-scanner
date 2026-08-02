@@ -319,58 +319,53 @@
     async function claimCertificate() {
         if (!currentStudentData) return;
 
-        // 1. เตรียมข้อมูล
         const btn = document.getElementById("certificateBtn");
         const originalBtnText = btn.innerHTML;
         
-        // ลิงก์รูป Template จาก GitHub ของคุณ
         const imageUrl = 'https://raw.githubusercontent.com/pongsakornbanbung/image/main/path_to_your_certificate_template.png';
         const studentName = currentStudentData.name;
 
-        // แสดงสถานะกำลังโหลด
         btn.disabled = true;
         btn.innerHTML = `<span class="animate-spin mr-2">⏳</span> กำลังสร้างรูป...`;
 
         try {
-            // 2. โหลดรูปภาพต้นฉบับ
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // สำคัญมาก สำหรับการโหลดรูปข้าม Domain จาก GitHub
+            img.crossOrigin = "Anonymous";
             img.src = imageUrl;
             
-            // รอโหลดรูปเสร็จ
             await new Promise((resolve, reject) => {
                 img.onload = resolve;
                 img.onerror = reject;
             });
 
-            // 3. สร้าง Canvas ตามขนาดจริงของรูปภาพ
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
 
-            // 4. วาดรูป Template ลงบน Canvas
             ctx.drawImage(img, 0, 0);
 
-            // 5. ตั้งค่าสไตล์ข้อความ
-            // ขนาดฟอนต์ 20px บนรูปขนาด 4K อาจจะดูเล็ก ให้ปรับขนาดขึ้นตามความเหมาะสมของรูปจริง (ตัวอย่างปรับเป็น 60px)
-            const fontSize = 60; 
-            ctx.font = `bold ${fontSize}px Prompt, sans-serif`; // ใช้ฟอนต์ Prompt ตามที่ระบุ (ต้องมั่นใจว่าโหลดฟอนต์นี้ใน CSS แล้ว)
-            ctx.fillStyle = '#090082'; // สีน้ำเงินตามต้องการ
-            ctx.textAlign = 'center';   // จัดกึ่งกลาง
+            // คำนวณขนาดฟอนต์ให้เข้ากับสัดส่วนความละเอียดจริงของรูป (ถ้าภาพใหญ่ 4K ให้ปรับสัดส่วนตามความเหมาะสม หรือกำหนดขนาดเทียบเท่าที่ต้องการ)
+            // หากต้องการขนาดเล็กประมาณ 18-20 ในสัดส่วนภาพจริง ให้ปรับตัวคูณด้านล่างนี้ได้เลยครับ
+            const fontSize = Math.round(canvas.height * 0.045); 
+            
+            ctx.font = `bold ${fontSize}px 'Prompt', sans-serif`;
+            ctx.fillStyle = '#090082';
+            ctx.textAlign = 'center';
 
-            // คำนวณตำแหน่งแกน X (กึ่งกลาง)
             const xCenter = canvas.width / 2;
-            const yPos = 433; // ตำแหน่ง Y ตามที่คุณเช็กมา (แต่อาจจะต้องปรับเพิ่มถ้าเปลี่ยนขนาดรูปภาพ)
+            
+            // ปรับตำแหน่งแกน Y ตามที่คุณต้องการ (พิกัด Y ในที่นี้คือเส้นบรรทัดตัวหนังสือ)
+            // หมายเหตุ: ถ้ารูปมีความละเอียดสูง (เช่นหลักพันพิกเซลขึ้นไป) ค่า 445 อาจจะอยู่ด้านบนเกินไป 
+            // หากรูปเป็นขนาดใหญ่ แนะนำให้เทียบสัดส่วน หรือถ้าใช้พิกัดตามภาพจริง ลองเช็กดูอีกทีได้ครับ
+            const yPos = 445 * (canvas.height / 794); // แปลงสัดส่วน Y ให้ตรงกับความสูงจริงของรูปอัตโนมัติ
 
-            // 6. วาดข้อความชื่อนักเรียนลงบน Canvas
             ctx.fillText(studentName, xCenter, yPos);
 
-            // 7. สั่งดาวน์โหลดไฟล์ PNG
-            const dataUrl = canvas.toDataURL('image/png', 1.0); // คุณภาพสูงสุด
+            const dataUrl = canvas.toDataURL('image/png', 1.0);
             const link = document.createElement('a');
             link.href = dataUrl;
-            link.download = `Certificate_${studentName}.png`; // ชื่อไฟล์
+            link.download = `Certificate_${studentName}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -379,7 +374,6 @@
             console.error("Error generating PNG:", error);
             alert('ไม่สามารถสร้างเกียรติบัตรได้ กรุณาลองใหม่อีกครั้ง');
         } finally {
-            // คืนค่าปุ่มให้กลับมาเหมือนเดิม
             btn.disabled = false;
             btn.innerHTML = originalBtnText;
         }
